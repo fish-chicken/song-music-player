@@ -2,7 +2,6 @@ const musicContainer = document.getElementById('music-container');
 const playBtn = document.getElementById('play');
 const prevBtn = document.getElementById('prev');
 const nextBtn = document.getElementById('next');
-
 const audio = document.getElementById('audio');
 const progress = document.getElementById('progress');
 const progressContainer = document.getElementById('progress-container');
@@ -12,10 +11,10 @@ const currTime = document.querySelector('#currTime');
 const durTime = document.querySelector('#durTime');
 
 // Song titles
-const songs = ['hey', 'summer', 'ukulele'];
+const songs = ['嚣张'];
 
 // Keep track of song
-let songIndex = 2;
+let songIndex = 0;
 
 // Initially load song details into DOM
 loadSong(songs[songIndex]);
