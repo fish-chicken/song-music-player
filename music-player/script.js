@@ -1,177 +1,254 @@
-const musicContainer = document.getElementById('music-container');
-const playBtn = document.getElementById('play');
-const prevBtn = document.getElementById('prev');
-const nextBtn = document.getElementById('next');
-const audio = document.getElementById('audio');
-const progress = document.getElementById('progress');
-const progressContainer = document.getElementById('progress-container');
-const title = document.getElementById('title');
-const cover = document.getElementById('cover');
-const currTime = document.querySelector('#currTime');
-const durTime = document.querySelector('#durTime');
+$(function () {
+  const playerTrack = $("#player-track");
+  const bgArtwork = $("#player-bg-artwork");
+  const albumName = $("#album-name");
+  const trackName = $("#track-name");
+  const albumArt = $("#album-art");
+  const sArea = $("#seek-bar-container");
+  const seekBar = $("#seek-bar");
+  const trackTime = $("#track-time");
+  const seekTime = $("#seek-time");
+  const sHover = $("#s-hover");
+  const playPauseButton = $("#play-pause-button");
+  const tProgress = $("#current-time");
+  const tTime = $("#track-length");
+  const playPreviousTrackButton = $("#play-previous");
+  const playNextTrackButton = $("#play-next");
+  const albums = [
+    "Me & You",
+    "Dawn",
+    "Electro Boy",
+    "Home",
+    "Proxy (Original Mix)"
+  ];
+  const trackNames = [
+    "Alex Skrindo - Me & You",
+    "Skylike - Dawn",
+    "Kaaze - Electro Boy",
+    "Jordan Schor - Home",
+    "Martin Garrix - Proxy"
+  ];
+  const albumArtworks = ["_1", "_2", "_3", "_4", "_5"];
+  const trackUrl = [
+    "https://singhimalaya.github.io/Codepen/assets/music/1.mp3",
+    "https://singhimalaya.github.io/Codepen/assets/music/2.mp3",
+    "https://singhimalaya.github.io/Codepen/assets/music/3.mp3",
+    "https://singhimalaya.github.io/Codepen/assets/music/4.mp3",
+    "https://singhimalaya.github.io/Codepen/assets/music/5.mp3"
+  ];
 
-// Song titles
-const songs = ['嚣张'];
+  let bgArtworkUrl,
+    i = playPauseButton.find("i"),
+    seekT,
+    seekLoc,
+    seekBarPos,
+    cM,
+    ctMinutes,
+    ctSeconds,
+    curMinutes,
+    curSeconds,
+    durMinutes,
+    durSeconds,
+    playProgress,
+    bTime,
+    nTime = 0,
+    buffInterval = null,
+    tFlag = false,
+    currIndex = -1;
 
-// Keep track of song
-let songIndex = 0;
-
-// Initially load song details into DOM
-loadSong(songs[songIndex]);
-
-// Update song details
-function loadSong(song) {
-  title.innerText = song;
-  audio.src = `music/${song}.mp3`;
-  cover.src = `images/${song}.jpg`;
-}
-
-// Play song
-function playSong() {
-  musicContainer.classList.add('play');
-  playBtn.querySelector('i.fas').classList.remove('fa-play');
-  playBtn.querySelector('i.fas').classList.add('fa-pause');
-
-  audio.play();
-}
-
-// Pause song
-function pauseSong() {
-  musicContainer.classList.remove('play');
-  playBtn.querySelector('i.fas').classList.add('fa-play');
-  playBtn.querySelector('i.fas').classList.remove('fa-pause');
-
-  audio.pause();
-}
-
-// Previous song
-function prevSong() {
-  songIndex--;
-
-  if (songIndex < 0) {
-    songIndex = songs.length - 1;
+  function playPause() {
+    setTimeout(function () {
+      if (audio.paused) {
+        playerTrack.addClass("active");
+        albumArt.addClass("active");
+        checkBuffering();
+        i.attr("class", "fas fa-pause");
+        audio.play();
+      } else {
+        playerTrack.removeClass("active");
+        albumArt.removeClass("active");
+        clearInterval(buffInterval);
+        albumArt.removeClass("buffering");
+        i.attr("class", "fas fa-play");
+        audio.pause();
+      }
+    }, 300);
   }
 
-  loadSong(songs[songIndex]);
+  function showHover(event) {
+    seekBarPos = sArea.offset();
+    seekT = event.clientX - seekBarPos.left;
+    seekLoc = audio.duration * (seekT / sArea.outerWidth());
 
-  playSong();
-}
+    sHover.width(seekT);
 
-// Next song
-function nextSong() {
-  songIndex++;
+    cM = seekLoc / 60;
 
-  if (songIndex > songs.length - 1) {
-    songIndex = 0;
+    ctMinutes = Math.floor(cM);
+    ctSeconds = Math.floor(seekLoc - ctMinutes * 60);
+
+    if (ctMinutes < 0 || ctSeconds < 0) return;
+
+    if (ctMinutes < 0 || ctSeconds < 0) return;
+
+    if (ctMinutes < 10) ctMinutes = "0" + ctMinutes;
+    if (ctSeconds < 10) ctSeconds = "0" + ctSeconds;
+
+    if (isNaN(ctMinutes) || isNaN(ctSeconds)) seekTime.text("--:--");
+    else seekTime.text(ctMinutes + ":" + ctSeconds);
+
+    seekTime.css({ left: seekT, "margin-left": "-21px" }).fadeIn(0);
   }
 
-  loadSong(songs[songIndex]);
-
-  playSong();
-}
-
-// Update progress bar
-function updateProgress(e) {
-  const { duration, currentTime } = e.srcElement;
-  const progressPercent = (currentTime / duration) * 100;
-  progress.style.width = `${progressPercent}%`;
-}
-
-// Set progress bar
-function setProgress(e) {
-  const width = this.clientWidth;
-  const clickX = e.offsetX;
-  const duration = audio.duration;
-
-  audio.currentTime = (clickX / width) * duration;
-}
-
-//get duration & currentTime for Time of song
-function DurTime (e) {
-	const {duration,currentTime} = e.srcElement;
-	var sec;
-	var sec_d;
-
-	// define minutes currentTime
-	let min = (currentTime==null)? 0:
-	 Math.floor(currentTime/60);
-	 min = min <10 ? '0'+min:min;
-
-	// define seconds currentTime
-	function get_sec (x) {
-		if(Math.floor(x) >= 60){
-			
-			for (var i = 1; i<=60; i++){
-				if(Math.floor(x)>=(60*i) && Math.floor(x)<(60*(i+1))) {
-					sec = Math.floor(x) - (60*i);
-					sec = sec <10 ? '0'+sec:sec;
-				}
-			}
-		}else{
-		 	sec = Math.floor(x);
-		 	sec = sec <10 ? '0'+sec:sec;
-		 }
-	} 
-
-	get_sec (currentTime,sec);
-
-	// change currentTime DOM
-	currTime.innerHTML = min +':'+ sec;
-
-	// define minutes duration
-	let min_d = (isNaN(duration) === true)? '0':
-		Math.floor(duration/60);
-	 min_d = min_d <10 ? '0'+min_d:min_d;
-
-
-	 function get_sec_d (x) {
-		if(Math.floor(x) >= 60){
-			
-			for (var i = 1; i<=60; i++){
-				if(Math.floor(x)>=(60*i) && Math.floor(x)<(60*(i+1))) {
-					sec_d = Math.floor(x) - (60*i);
-					sec_d = sec_d <10 ? '0'+sec_d:sec_d;
-				}
-			}
-		}else{
-		 	sec_d = (isNaN(duration) === true)? '0':
-		 	Math.floor(x);
-		 	sec_d = sec_d <10 ? '0'+sec_d:sec_d;
-		 }
-	} 
-
-	// define seconds duration
-	
-	get_sec_d (duration);
-
-	// change duration DOM
-	durTime.innerHTML = min_d +':'+ sec_d;
-		
-};
-
-// Event listeners
-playBtn.addEventListener('click', () => {
-  const isPlaying = musicContainer.classList.contains('play');
-
-  if (isPlaying) {
-    pauseSong();
-  } else {
-    playSong();
+  function hideHover() {
+    sHover.width(0);
+    seekTime
+      .text("00:00")
+      .css({ left: "0px", "margin-left": "0px" })
+      .fadeOut(0);
   }
+
+  function playFromClickedPos() {
+    audio.currentTime = seekLoc;
+    seekBar.width(seekT);
+    hideHover();
+  }
+
+  function updateCurrTime() {
+    nTime = new Date();
+    nTime = nTime.getTime();
+
+    if (!tFlag) {
+      tFlag = true;
+      trackTime.addClass("active");
+    }
+
+    curMinutes = Math.floor(audio.currentTime / 60);
+    curSeconds = Math.floor(audio.currentTime - curMinutes * 60);
+
+    durMinutes = Math.floor(audio.duration / 60);
+    durSeconds = Math.floor(audio.duration - durMinutes * 60);
+
+    playProgress = (audio.currentTime / audio.duration) * 100;
+
+    if (curMinutes < 10) curMinutes = "0" + curMinutes;
+    if (curSeconds < 10) curSeconds = "0" + curSeconds;
+
+    if (durMinutes < 10) durMinutes = "0" + durMinutes;
+    if (durSeconds < 10) durSeconds = "0" + durSeconds;
+
+    if (isNaN(curMinutes) || isNaN(curSeconds)) tProgress.text("00:00");
+    else tProgress.text(curMinutes + ":" + curSeconds);
+
+    if (isNaN(durMinutes) || isNaN(durSeconds)) tTime.text("00:00");
+    else tTime.text(durMinutes + ":" + durSeconds);
+
+    if (
+      isNaN(curMinutes) ||
+      isNaN(curSeconds) ||
+      isNaN(durMinutes) ||
+      isNaN(durSeconds)
+    )
+      trackTime.removeClass("active");
+    else trackTime.addClass("active");
+
+    seekBar.width(playProgress + "%");
+
+    if (playProgress == 100) {
+      i.attr("class", "fa fa-play");
+      seekBar.width(0);
+      tProgress.text("00:00");
+      albumArt.removeClass("buffering").removeClass("active");
+      clearInterval(buffInterval);
+    }
+  }
+
+  function checkBuffering() {
+    clearInterval(buffInterval);
+    buffInterval = setInterval(function () {
+      if (nTime == 0 || bTime - nTime > 1000) albumArt.addClass("buffering");
+      else albumArt.removeClass("buffering");
+
+      bTime = new Date();
+      bTime = bTime.getTime();
+    }, 100);
+  }
+
+  function selectTrack(flag) {
+    if (flag == 0 || flag == 1) ++currIndex;
+    else --currIndex;
+
+    if (currIndex > -1 && currIndex < albumArtworks.length) {
+      if (flag == 0) i.attr("class", "fa fa-play");
+      else {
+        albumArt.removeClass("buffering");
+        i.attr("class", "fa fa-pause");
+      }
+
+      seekBar.width(0);
+      trackTime.removeClass("active");
+      tProgress.text("00:00");
+      tTime.text("00:00");
+
+      currAlbum = albums[currIndex];
+      currTrackName = trackNames[currIndex];
+      currArtwork = albumArtworks[currIndex];
+
+      audio.src = trackUrl[currIndex];
+
+      nTime = 0;
+      bTime = new Date();
+      bTime = bTime.getTime();
+
+      if (flag != 0) {
+        audio.play();
+        playerTrack.addClass("active");
+        albumArt.addClass("active");
+
+        clearInterval(buffInterval);
+        checkBuffering();
+      }
+
+      albumName.text(currAlbum);
+      trackName.text(currTrackName);
+      albumArt.find("img.active").removeClass("active");
+      $("#" + currArtwork).addClass("active");
+
+      bgArtworkUrl = $("#" + currArtwork).attr("src");
+
+      bgArtwork.css({ "background-image": "url(" + bgArtworkUrl + ")" });
+    } else {
+      if (flag == 0 || flag == 1) --currIndex;
+      else ++currIndex;
+    }
+  }
+
+  function initPlayer() {
+    audio = new Audio();
+
+    selectTrack(0);
+
+    audio.loop = false;
+
+    playPauseButton.on("click", playPause);
+
+    sArea.mousemove(function (event) {
+      showHover(event);
+    });
+
+    sArea.mouseout(hideHover);
+
+    sArea.on("click", playFromClickedPos);
+
+    $(audio).on("timeupdate", updateCurrTime);
+
+    playPreviousTrackButton.on("click", function () {
+      selectTrack(-1);
+    });
+    playNextTrackButton.on("click", function () {
+      selectTrack(1);
+    });
+  }
+
+  initPlayer();
 });
-
-// Change song
-prevBtn.addEventListener('click', prevSong);
-nextBtn.addEventListener('click', nextSong);
-
-// Time/song update
-audio.addEventListener('timeupdate', updateProgress);
-
-// Click on progress bar
-progressContainer.addEventListener('click', setProgress);
-
-// Song ends
-audio.addEventListener('ended', nextSong);
-
-// Time of song
-audio.addEventListener('timeupdate',DurTime);
